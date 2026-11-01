@@ -150,6 +150,18 @@ def start_firebase_listener():
 # ═══════════════════════════════════════════════════════════════════
 # Flask Routes
 # ═══════════════════════════════════════════════════════════════════
+@app.route('/api/debug')
+def api_debug():
+    try:
+        snap = db.reference('monitoring').get()
+    except Exception as e:
+        snap = f"error: {e}"
+    return jsonify({
+        "firebase_connected": firebase_connected,
+        "monitoring_di_firebase": snap,
+        "sensor_data_di_server": sensor_data
+    })
+    
 @app.route('/')
 def index():
     return render_template('index.html')
