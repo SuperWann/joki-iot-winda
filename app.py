@@ -26,7 +26,10 @@ firebase_connected = False
 try:
     cred_path = next((p for p in CRED_PATHS if os.path.exists(p)), CRED_PATHS[-1])
     cred = credentials.Certificate(cred_path)
-    firebase_admin.initialize_app(cred, {'databaseURL': DATABASE_URL})
+    firebase_admin.initialize_app(cred, {
+        'databaseURL': DATABASE_URL,
+        'httpTimeout': 10,  # detik, supaya panggilan Firebase tidak menggantung
+    })
     firebase_connected = True
     print(f"✅ Firebase {cred.project_id} connected!")
 except Exception as e:
@@ -169,8 +172,8 @@ def index():
 
 @app.route('/api/data', strict_slashes=False)
 def api_data():
-    """Return sensor & chart data untuk HTTP polling dari dashboard."""
-    sync_from_firebase()  # pastikan data segar setiap dashboard meminta
+    """Return sensor & chart data untuk HTTP polling dari dashboard.
+    Hanya membaca memori (cepat). Data diisi oleh thread poll_loop."""
     return jsonify({
         "sensor": sensor_data,
         "chart": chart_data
