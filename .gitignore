@@ -1,0 +1,6 @@
+# Ignore Firebase credentials
+firebase-service-account.json
+
+data/sensor_data.json
+__pycache__/
+*.pyc

@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🐔 PoultryPro</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=3">
+</head>
+<body>
+    <header class="header">
+        <nav class="navbar">
+            <a href="#" class="logo"><i class="fas fa-egg"></i><span>PoultryPro</span></a>
+            <div class="status-indicator" id="statusIndicator">
+                <i class="fas fa-wifi"></i> <span id="statusText">Connecting...</span>
+            </div>
+        </nav>
+    </header>
+    
+    <main class="main">
+        <!-- Hero Section -->
+        <section class="hero">
+            <h1>🐔 Monitoring Kandang Ayam</h1>
+            <p>Real-time data suhu, kelembaban, gas NH3 & kontrol motor via Firebase</p>
+        </section>
+        
+        <!-- Stats Grid -->
+        <section class="stats-grid">
+            <div class="stat-card stat-temp">
+                <div class="stat-icon"><i class="fas fa-thermometer-half"></i></div>
+                <div class="stat-value" id="suhu">--°C</div>
+                <div class="stat-label">Suhu Kandang</div>
+            </div>
+            <div class="stat-card stat-hum">
+                <div class="stat-icon"><i class="fas fa-tint"></i></div>
+                <div class="stat-value" id="kelembaban">--%</div>
+                <div class="stat-label">Kelembaban</div>
+            </div>
+            <div class="stat-card stat-gas">
+                <div class="stat-icon"><i class="fas fa-wind"></i></div>
+                <div class="stat-value" id="gas">--</div>
+                <div class="stat-label">Gas NH3 (<span id="gasPersen">--%</span>)</div>
+            </div>
+            <div class="stat-card stat-motor">
+                <div class="stat-icon" id="motorIcon"><i class="fas fa-cog"></i></div>
+                <div class="stat-value" id="motor">OFF</div>
+                <div class="stat-label">Motor</div>
+            </div>
+            <div class="stat-card stat-wifi">
+                <div class="stat-icon"><i class="fas fa-signal"></i></div>
+                <div class="stat-value" id="sinyalWifi">-- dBm</div>
+                <div class="stat-label">Sinyal WiFi ESP</div>
+            </div>
+            <div class="stat-card stat-time">
+                <div class="stat-icon"><i class="fas fa-clock"></i></div>
+                <div class="stat-value" id="waktu">--:--:--</div>
+                <div class="stat-label"><span id="tanggal">--</span></div>
+            </div>
+        </section>
+        
+        <!-- Control Section -->
+        <section class="control-section">
+            <div class="control-card">
+                <h3><i class="fas fa-toggle-on"></i> KONTROL MOTOR</h3>
+                <button class="btn btn-on" onclick="setMotor('ON')">
+                    <i class="fas fa-power-off"></i> Nyalakan
+                </button>
+                <button class="btn btn-off" onclick="setMotor('OFF')">
+                    <i class="fas fa-stop-circle"></i> Matikan
+                </button>
+                <div class="status-text">Status: <span id="motorStatus">--</span></div>
+            </div>
+            <div class="control-card">
+                <h3><i class="fas fa-info-circle"></i> INFO SISTEM</h3>
+                <div class="info-item">
+                    <span class="info-label">Sumber Data</span>
+                    <span class="info-value">Firebase RTDB</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Update Interval</span>
+                    <span class="info-value">Real-time Listener</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Poll Dashboard</span>
+                    <span class="info-value">2.5 detik</span>
+                </div>
+            </div>
+        </section>
+        
+        <!-- Charts Section -->
+        <section class="charts-section">
+            <div class="charts-header">
+                <h2><i class="fas fa-chart-line"></i> Grafik Real-time</h2>
+                <button class="btn" onclick="manualRefresh()">🔄 Refresh</button>
+            </div>
+            <div class="charts-grid">
+                <div class="chart-container">
+                    <h3 style="color:#ef4444;">📊 Suhu (°C)</h3>
+                    <canvas id="chartSuhu"></canvas>
+                </div>
+                <div class="chart-container">
+                    <h3 style="color:#22c55e;">💧 Kelembaban (%)</h3>
+                    <canvas id="chartKelembaban"></canvas>
+                </div>
+                <div class="chart-container">
+                    <h3 style="color:#f59e0b;">💨 Gas NH3</h3>
+                    <canvas id="chartGas"></canvas>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script src="{{ url_for('static', filename='script.js') }}?v=3"></script>
+</body>
+</html>

@@ -1,0 +1,32 @@
+{
+  "rules": {
+    "monitoring": {
+      ".read": true,
+      ".write": true,
+      "suhu": {
+        ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 100"
+      },
+      "kelembaban": {
+        ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 100"
+      },
+      "gas": {
+        ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 5000"
+      },
+      "gas_persen": {
+        ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 100"
+      },
+      "motor": {
+        ".validate": "newData.isString()"
+      },
+      "sinyal_wifi": {
+        ".validate": "newData.isNumber()"
+      },
+      "tanggal": {
+        ".validate": "newData.isString()"
+      },
+      "waktu": {
+        ".validate": "newData.isString()"
+      }
+    }
+  }
+}
