@@ -99,67 +99,67 @@ def save_persisted_data():
 
 
 # ═══════════════════════════════════════════════════════════════════
-# Sinkronisasi dari Firebase (polling, stabil di Gunicorn/Render)
+# Sinkronisasi dari Firebase
+# Dipanggil dari dalam request /api/data (jalur yang terbukti jalan
+# di Gunicorn). Lock TIDAK pernah ditunggu: kalau request lain sedang
+# mengambil data, request ini langsung memakai data terakhir.
 # ═══════════════════════════════════════════════════════════════════
-data_lock = threading.Lock()
+sync_lock = threading.Lock()
 last_sync = 0.0
 last_waktu = None
 SYNC_INTERVAL = 2  # detik
 
 
+def _sync_once():
+    """Ambil /monitoring dari Firebase, update sensor_data & chart."""
+    global last_waktu
+    snap = db.reference('monitoring').get()
+    if not isinstance(snap, dict):
+        print(f"⚠️ /monitoring kosong atau bukan objek: {snap!r}")
+        return
+
+    for key in sensor_data:
+        if key in snap:
+            sensor_data[key] = snap[key]
+
+    waktu = sensor_data.get("waktu") or datetime.now(TIMEZONE).strftime("%H:%M:%S")
+
+    # Tambah titik chart hanya kalau ada pembacaan baru dari ESP
+    if waktu != last_waktu:
+        last_waktu = waktu
+        chart_data["labels"].append(waktu)
+        chart_data["suhu"].append(sensor_data.get("suhu", 0))
+        chart_data["kelembaban"].append(sensor_data.get("kelembaban", 0))
+        chart_data["gas"].append(sensor_data.get("gas", 0))
+
+        if len(chart_data["labels"]) > MAX_CHART_POINTS:
+            for key in chart_data:
+                chart_data[key] = chart_data[key][-MAX_CHART_POINTS:]
+
+        save_persisted_data()
+        print(
+            f"📡 Data update: suhu={sensor_data.get('suhu')}°C, "
+            f"kelembaban={sensor_data.get('kelembaban')}%, "
+            f"gas={sensor_data.get('gas')}, "
+            f"motor={sensor_data.get('motor')}"
+        )
+
+
 def sync_from_firebase():
-    """Ambil data terbaru dari /monitoring, update sensor_data & chart."""
-    global last_sync, last_waktu
+    global last_sync
     if not firebase_connected:
         return
     if time.time() - last_sync < SYNC_INTERVAL:
         return
-
-    with data_lock:
-        # cek ulang setelah dapat lock (thread lain mungkin sudah sync)
-        if time.time() - last_sync < SYNC_INTERVAL:
-            return
+    if not sync_lock.acquire(blocking=False):
+        return  # ada request lain yang sedang sync, pakai data terakhir
+    try:
+        _sync_once()
+    except Exception as e:
+        print(f"⚠️ Sync error: {e}")
+    finally:
         last_sync = time.time()
-
-        try:
-            snap = db.reference('monitoring').get()
-            if not isinstance(snap, dict):
-                return
-
-            for key in sensor_data:
-                if key in snap:
-                    sensor_data[key] = snap[key]
-
-            waktu = sensor_data.get("waktu") or datetime.now(TIMEZONE).strftime("%H:%M:%S")
-
-            # Tambah titik chart hanya kalau ada pembacaan baru dari ESP
-            if waktu != last_waktu:
-                last_waktu = waktu
-                chart_data["labels"].append(waktu)
-                chart_data["suhu"].append(sensor_data.get("suhu", 0))
-                chart_data["kelembaban"].append(sensor_data.get("kelembaban", 0))
-                chart_data["gas"].append(sensor_data.get("gas", 0))
-
-                if len(chart_data["labels"]) > MAX_CHART_POINTS:
-                    for key in chart_data:
-                        chart_data[key] = chart_data[key][-MAX_CHART_POINTS:]
-
-                save_persisted_data()
-                print(
-                    f"📡 Data update: suhu={sensor_data.get('suhu')}°C, "
-                    f"kelembaban={sensor_data.get('kelembaban')}%, "
-                    f"gas={sensor_data.get('gas')}, "
-                    f"motor={sensor_data.get('motor')}"
-                )
-        except Exception as e:
-            print(f"⚠️ Sync error: {e}")
-
-
-def poll_loop():
-    """Thread latar belakang: isi grafik walau tidak ada yang membuka dashboard."""
-    while True:
-        sync_from_firebase()
-        time.sleep(3)
+        sync_lock.release()
 
 
 # ═══════════════════════════════════════════════════════════════════
@@ -172,8 +172,8 @@ def index():
 
 @app.route('/api/data', strict_slashes=False)
 def api_data():
-    """Return sensor & chart data untuk HTTP polling dari dashboard.
-    Hanya membaca memori (cepat). Data diisi oleh thread poll_loop."""
+    """Return sensor & chart data untuk HTTP polling dari dashboard."""
+    sync_from_firebase()
     return jsonify({
         "sensor": sensor_data,
         "chart": chart_data
@@ -203,7 +203,6 @@ def api_control():
 # Startup (jalan di Gunicorn maupun python app.py)
 # ═══════════════════════════════════════════════════════════════════
 load_persisted_data()
-threading.Thread(target=poll_loop, daemon=True).start()
 print("🐔 PoultryPro Dashboard Ready!")
 print(f"🔥 Firebase: {'Connected' if firebase_connected else 'Disabled'}")
 
