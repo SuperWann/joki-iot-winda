@@ -186,16 +186,11 @@ def api_control():
 # ═══════════════════════════════════════════════════════════════════
 # Main Entry Point
 # ═══════════════════════════════════════════════════════════════════
+load_persisted_data()
+threading.Thread(target=start_firebase_listener, daemon=True).start()
+print("🐔 PoultryPro Dashboard Ready!")
+print(f"🔥 Firebase: {'Connected' if firebase_connected else 'Disabled'}")
+
 if __name__ == '__main__':
-    # Muat data chart terakhir dari disk
-    load_persisted_data()
-
-    # Mulai Firebase listener di background thread
-    listener_thread = threading.Thread(target=start_firebase_listener, daemon=True)
-    listener_thread.start()
-
-    print("🐔 PoultryPro Dashboard Ready!")
-    print(f"🔥 Firebase: {'Connected' if firebase_connected else 'Disabled'}")
     print("🌐 Dashboard: http://localhost:5000")
-
     app.run(host='0.0.0.0', port=5000, debug=False, use_reloader=False)
