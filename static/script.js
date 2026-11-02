@@ -160,21 +160,39 @@ function updateUI(data) {
 }
 
 // ─── Motor Control ──────────────────────────────────────────────────
-async function setMotor(state) {
+async function kirimMotor(durasi) {
+    const pesan = document.getElementById('pesanKontrol');
+    pesan.textContent = 'Mengirim perintah...';
     try {
         const response = await fetch('/api/control', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ action: 'motor', value: state })
+            body: JSON.stringify({ action: 'motor', durasi: durasi })
         });
         const result = await response.json();
         if (result.status === 'ok') {
-            document.getElementById('motorStatus').textContent = state;
-            console.log('Motor →', state);
+            pesan.textContent = durasi > 0
+                ? 'Terkirim. Motor menyala dalam ±5 detik selama ' + result.durasi + ' detik.'
+                : 'Perintah berhenti terkirim (±5 detik).';
+        } else {
+            pesan.textContent = 'Gagal: ' + (result.message || 'tidak diketahui');
         }
     } catch (e) {
         console.error('Control error:', e);
+        pesan.textContent = 'Gagal menghubungi server.';
     }
+}
+
+function jalankanMotor() {
+    let d = parseInt(document.getElementById('durasi').value);
+    if (isNaN(d) || d < 1) d = 1;
+    if (d > 120) d = 120;
+    document.getElementById('durasi').value = d;
+    kirimMotor(d);
+}
+
+function hentikanMotor() {
+    kirimMotor(0);
 }
 
 // ─── Manual Refresh ─────────────────────────────────────────────────

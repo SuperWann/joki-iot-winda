@@ -165,6 +165,10 @@ def sync_from_firebase():
 # ═══════════════════════════════════════════════════════════════════
 # Flask Routes
 # ═══════════════════════════════════════════════════════════════════
+MAX_DURASI = 120      # detik, batas aman (sama dengan di ESP)
+COOLDOWN = 3          # detik minimal antar perintah "jalan"
+last_control = 0.0
+
 @app.route('/')
 def index():
     return render_template('index.html')
@@ -182,21 +186,38 @@ def api_data():
 
 @app.route('/api/control', methods=['POST'])
 def api_control():
-    """Terima perintah kontrol motor dari dashboard, kirim ke Firebase."""
+    """Terima perintah motor dari dashboard, tulis ke Firebase /kontrol."""
+    global last_control
     try:
-        data = request.get_json()
-        action = data.get('action')
-        value = data.get('value')
+        data = request.get_json(silent=True) or {}
 
-        if action == 'motor' and firebase_connected:
-            # Tulis ke Firebase → ESP akan membaca perubahan ini
-            db.reference('monitoring/motor').set(value)
-            sensor_data["motor"] = value
-            print(f"📤 Motor control → {value}")
+        if data.get('action') != 'motor':
+            return jsonify({"status": "error", "message": "aksi tidak dikenal"}), 400
+        if not firebase_connected:
+            return jsonify({"status": "error", "message": "Firebase tidak terhubung"}), 503
 
-        return jsonify({"status": "ok", "action": action, "value": value})
+        try:
+            durasi = int(data.get('durasi', 0))
+        except (TypeError, ValueError):
+            return jsonify({"status": "error", "message": "durasi tidak valid"}), 400
+
+        # batasi di server, jangan percaya angka dari browser
+        durasi = max(0, min(durasi, MAX_DURASI))
+
+        now = time.time()
+        # perintah STOP (durasi 0) selalu boleh; perintah jalan dibatasi cooldown
+        if durasi > 0 and now - last_control < COOLDOWN:
+            return jsonify({"status": "error", "message": "Tunggu sebentar sebelum perintah berikutnya"}), 429
+        last_control = now
+
+        db.reference('kontrol').set({
+            'durasi': durasi,
+            'id': str(int(now * 1000))
+        })
+        print(f"📤 Kontrol motor → durasi {durasi} detik")
+        return jsonify({"status": "ok", "durasi": durasi})
     except Exception as e:
-        return jsonify({"status": "error", "message": str(e)}), 400
+        return jsonify({"status": "error", "message": str(e)}), 500
 
 
 # ═══════════════════════════════════════════════════════════════════

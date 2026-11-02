@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="id">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -9,6 +10,7 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=3">
 </head>
+
 <body>
     <header class="header">
         <nav class="navbar">
@@ -18,14 +20,14 @@
             </div>
         </nav>
     </header>
-    
+
     <main class="main">
         <!-- Hero Section -->
         <section class="hero">
             <h1>🐔 Monitoring Kandang Ayam</h1>
             <p>Real-time data suhu, kelembaban, gas NH3 & kontrol motor via Firebase</p>
         </section>
-        
+
         <!-- Stats Grid -->
         <section class="stats-grid">
             <div class="stat-card stat-temp">
@@ -59,18 +61,22 @@
                 <div class="stat-label"><span id="tanggal">--</span></div>
             </div>
         </section>
-        
+
         <!-- Control Section -->
         <section class="control-section">
             <div class="control-card">
                 <h3><i class="fas fa-toggle-on"></i> KONTROL MOTOR</h3>
-                <button class="btn btn-on" onclick="setMotor('ON')">
+                <input id="durasi" type="number" min="1" max="120" value="10"
+                    style="width:100%;padding:10px;margin-bottom:6px;border-radius:8px;border:1px solid #475569;background:#0f172a;color:#fff;box-sizing:border-box;">
+                <div style="font-size:12px;color:#94a3b8;margin-bottom:10px;">Durasi dalam detik (1 sampai 120)</div>
+                <button class="btn btn-on" onclick="jalankanMotor()">
                     <i class="fas fa-power-off"></i> Nyalakan
                 </button>
-                <button class="btn btn-off" onclick="setMotor('OFF')">
+                <button class="btn btn-off" onclick="hentikanMotor()">
                     <i class="fas fa-stop-circle"></i> Matikan
                 </button>
                 <div class="status-text">Status: <span id="motorStatus">--</span></div>
+                <div id="pesanKontrol" style="font-size:12px;color:#94a3b8;margin-top:6px;"></div>
             </div>
             <div class="control-card">
                 <h3><i class="fas fa-info-circle"></i> INFO SISTEM</h3>
@@ -88,7 +94,7 @@
                 </div>
             </div>
         </section>
-        
+
         <!-- Charts Section -->
         <section class="charts-section">
             <div class="charts-header">
@@ -114,4 +120,5 @@
 
     <script src="{{ url_for('static', filename='script.js') }}?v=3"></script>
 </body>
+
 </html>
