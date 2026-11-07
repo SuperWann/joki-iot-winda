@@ -16,7 +16,7 @@ TIMEZONE = pytz.timezone('Asia/Jakarta')
 # ─── Initialize Firebase ────────────────────────────────────────────
 # Di Render: file ada di /etc/secrets/ (Secret File).
 # Di laptop: file ada di folder proyek.
-DATABASE_URL = 'https://joki-iot-winda-default-rtdb.asia-southeast1.firebasedatabase.app'
+DATABASE_URL = 'https://poultry-project-default-rtdb.asia-southeast1.firebasedatabase.app'
 CRED_PATHS = [
     '/etc/secrets/firebase-service-account.json',
     'firebase-service-account.json',
